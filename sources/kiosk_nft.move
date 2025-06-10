@@ -1,3 +1,4 @@
+// // this one also works but it is not using the AdminCap
 module nft::kiosk_nft {
     use std::string::{Self, String};
     use sui::display;
@@ -12,7 +13,6 @@ module nft::kiosk_nft {
     use kiosk::personal_kiosk_rule;
     use kiosk::kiosk_lock_rule;
     use kiosk::royalty_rule;
-    use nft::cap::AdminCap;
 
     const EWrongVersion: u64 = 0;
     const EExceedsMintSupply: u64 = 2;
@@ -28,7 +28,7 @@ module nft::kiosk_nft {
         image_url: String,
         creator: address,
         mint_number: u64,
-        rarity: String,
+      
     }
 
     public struct Collection has key, store {
@@ -46,7 +46,7 @@ module nft::kiosk_nft {
         display::add(&mut display, string::utf8(b"description"), string::utf8(b"{description}"));
         display::add(&mut display, string::utf8(b"image_url"), string::utf8(b"{image_url}"));
         display::add(&mut display, string::utf8(b"creator"), string::utf8(b"{creator}"));
-        display::add(&mut display, string::utf8(b"rarity"), string::utf8(b"{rarity}"));
+        
         display::update_version(&mut display);
         transfer::public_share_object(display);
 
@@ -57,14 +57,10 @@ module nft::kiosk_nft {
         transfer::public_share_object(policy);
         transfer::public_transfer(cap, tx_context::sender(ctx));
         transfer::public_transfer(publisher, tx_context::sender(ctx));
-
-        // Create and transfer AdminCap
-        let admin_cap = nft::cap::new(ctx);
-        transfer::public_transfer(admin_cap, tx_context::sender(ctx));
     }
 
     public fun create_collection(
-        _admin_cap: &AdminCap,
+        _publisher: &Publisher,
         mint_supply: u64,
         ctx: &mut TxContext
     ): Collection {
@@ -78,7 +74,6 @@ module nft::kiosk_nft {
     }
 
     public fun mint_nft(
-        _admin_cap: &AdminCap,
         collection: &mut Collection,
         name: String,
         description: String,
@@ -91,15 +86,16 @@ module nft::kiosk_nft {
         assert!(collection.creator == tx_context::sender(ctx), ENotAuthorized);
 
         collection.minted = collection.minted + 1;
-        Nft {
+        let nft = Nft {
             id: object::new(ctx),
             name,
             description,
             image_url,
             creator: collection.creator,
             mint_number: collection.minted,
-            rarity,
-        }
+        
+        };
+        nft
     }
 
     public fun update_mint_supply(
@@ -140,13 +136,10 @@ module nft::kiosk_nft {
         royalty_rule::pay(policy, request, payment);
     }
 
-    public fun get_royalty_fee_amount(
-        _admin_cap: &AdminCap,
-        policy: &TransferPolicy<Nft>,
-        paid: u64
-    ): u64 {
+    public fun get_royalty_fee_amount(policy: &TransferPolicy<Nft>, paid: u64): u64 {
         royalty_rule::fee_amount(policy, paid)
     }
+ 
 }
 
 
@@ -154,10 +147,6 @@ module nft::kiosk_nft {
 
 
 
-
-
-
-//this one also works but it is not using the AdminCap
 // module nft::kiosk_nft {
 //     use std::string::{Self, String};
 //     use sui::display;
@@ -172,6 +161,7 @@ module nft::kiosk_nft {
 //     use kiosk::personal_kiosk_rule;
 //     use kiosk::kiosk_lock_rule;
 //     use kiosk::royalty_rule;
+//     use nft::cap::AdminCap;
 
 //     const EWrongVersion: u64 = 0;
 //     const EExceedsMintSupply: u64 = 2;
@@ -216,10 +206,14 @@ module nft::kiosk_nft {
 //         transfer::public_share_object(policy);
 //         transfer::public_transfer(cap, tx_context::sender(ctx));
 //         transfer::public_transfer(publisher, tx_context::sender(ctx));
+
+//         // Create and transfer AdminCap
+//         let admin_cap = nft::cap::new(ctx);
+//         transfer::public_transfer(admin_cap, tx_context::sender(ctx));
 //     }
 
 //     public fun create_collection(
-//         _publisher: &Publisher,
+//         _admin_cap: &AdminCap,
 //         mint_supply: u64,
 //         ctx: &mut TxContext
 //     ): Collection {
@@ -233,6 +227,7 @@ module nft::kiosk_nft {
 //     }
 
 //     public fun mint_nft(
+//         _admin_cap: &AdminCap,
 //         collection: &mut Collection,
 //         name: String,
 //         description: String,
@@ -245,7 +240,7 @@ module nft::kiosk_nft {
 //         assert!(collection.creator == tx_context::sender(ctx), ENotAuthorized);
 
 //         collection.minted = collection.minted + 1;
-//         let nft = Nft {
+//         Nft {
 //             id: object::new(ctx),
 //             name,
 //             description,
@@ -253,8 +248,7 @@ module nft::kiosk_nft {
 //             creator: collection.creator,
 //             mint_number: collection.minted,
 //             rarity,
-//         };
-//         nft
+//         }
 //     }
 
 //     public fun update_mint_supply(
@@ -295,7 +289,13 @@ module nft::kiosk_nft {
 //         royalty_rule::pay(policy, request, payment);
 //     }
 
-//     public fun get_royalty_fee_amount(policy: &TransferPolicy<Nft>, paid: u64): u64 {
+//     public fun get_royalty_fee_amount(
+//         _admin_cap: &AdminCap,
+//         policy: &TransferPolicy<Nft>,
+//         paid: u64
+//     ): u64 {
 //         royalty_rule::fee_amount(policy, paid)
 //     }
+// }
+
 // }
