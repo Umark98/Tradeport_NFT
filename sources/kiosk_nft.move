@@ -157,7 +157,7 @@ module nft::kiosk_nft {
 
 
 
-
+//this one also works but it is not using the AdminCap
 // module nft::kiosk_nft {
 //     use std::string::{Self, String};
 //     use sui::display;
